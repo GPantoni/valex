@@ -129,3 +129,45 @@ function validateSecurityCode(
     throw errorUtils.errorBadRequest('Invalid security code');
   }
 }
+
+export async function blockCard(cardInfo: any) {
+  const { id, password } = cardInfo;
+
+  const existingCard: cardRepository.Card = await cardRepository.findById(id);
+  if (!existingCard) {
+    throw errorUtils.errorNotFound('card id');
+  }
+
+  validateExpirationDate(existingCard.expirationDate);
+
+  if (existingCard.isBlocked) {
+    throw errorUtils.errorForbidden('Card already blocked');
+  }
+
+  const hashedPassword = existingCard.password;
+  const isPasswordValid = bcrypt.compareSync(password, hashedPassword);
+  if (isPasswordValid) {
+    await cardRepository.update(id, { isBlocked: true });
+  }
+}
+
+export async function unblockCard(cardInfo: any) {
+  const { id, password } = cardInfo;
+
+  const existingCard: cardRepository.Card = await cardRepository.findById(id);
+  if (!existingCard) {
+    throw errorUtils.errorNotFound('card id');
+  }
+
+  validateExpirationDate(existingCard.expirationDate);
+
+  if (!existingCard.isBlocked) {
+    throw errorUtils.errorForbidden('Card already unblocked');
+  }
+
+  const hashedPassword = existingCard.password;
+  const isPasswordValid = bcrypt.compareSync(password, hashedPassword);
+  if (isPasswordValid) {
+    await cardRepository.update(id, { isBlocked: false });
+  }
+}
