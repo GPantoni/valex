@@ -17,3 +17,17 @@ export async function createCard(
 
   res.sendStatus(201);
 }
+
+export async function activateCard(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { id } = req.params;
+  const cardInfo = res.locals.verified;
+  cardInfo.id = id;
+
+  await cardService.activateCard(cardInfo);
+
+  res.sendStatus(200);
+}
