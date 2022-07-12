@@ -41,5 +41,21 @@ export async function blockCard(
   const cardInfo = res.locals.verified;
   cardInfo.id = id;
 
+  await cardService.blockCard(cardInfo);
+
+  res.sendStatus(200);
+}
+
+export async function unblockCard(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { id } = req.params;
+  const cardInfo = res.locals.verified;
+  cardInfo.id = id;
+
+  await cardService.unblockCard(cardInfo);
+
   res.sendStatus(200);
 }
