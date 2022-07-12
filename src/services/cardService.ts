@@ -5,6 +5,7 @@ import * as cardRepository from '../repositories/cardRepository.js';
 import { faker } from '@faker-js/faker';
 import dayjs from 'dayjs';
 import Cryptr from 'cryptr';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -70,4 +71,61 @@ function encryptr(cvv: string) {
   const cryptr = new Cryptr(process.env.CRYPTR);
   const encryptedString = cryptr.encrypt(cvv);
   return encryptedString;
+}
+
+function decryptr(cvv: string) {
+  const cryptr = new Cryptr(process.env.CRYPTR);
+  const encryptedString = cryptr.decrypt(cvv);
+  return encryptedString;
+}
+
+export async function activateCard(cardInfo: any) {
+  const { id, securityCode, password } = cardInfo;
+
+  const existingCard: cardRepository.Card = await cardRepository.findById(id);
+  if (!existingCard) {
+    throw errorUtils.errorNotFound('card id');
+  }
+
+  validateExpirationDate(existingCard.expirationDate);
+
+  if (existingCard.password) {
+    throw errorUtils.errorForbidden('Card has already been activated');
+  }
+
+  validateSecurityCode(securityCode, existingCard);
+
+  await updateCardPassword(id, password);
+}
+
+async function updateCardPassword(id: number, password: string) {
+  const passwordFormatRegex = /^[0-9]{4}$/;
+  if (!passwordFormatRegex.test(password)) {
+    throw errorUtils.errorBadRequest('Password must contain 4 numbers');
+  }
+
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  await cardRepository.update(id, {
+    password: hashedPassword,
+    isBlocked: false,
+  });
+
+  return;
+}
+
+function validateExpirationDate(expirationDate: string) {
+  const now = dayjs(Date.now()).format('MM/YY');
+  if (dayjs(now).isAfter(dayjs(expirationDate))) {
+    throw errorUtils.errorBadRequest('Card has already expired');
+  }
+}
+
+function validateSecurityCode(
+  securityCode: string,
+  existingCard: cardRepository.Card
+) {
+  const cardSecurityCode = decryptr(existingCard.securityCode);
+  if (cardSecurityCode !== securityCode) {
+    throw errorUtils.errorBadRequest('Invalid security code');
+  }
 }

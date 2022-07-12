@@ -10,3 +10,8 @@ export const createCardSchema = Joi.object({
     'health'
   ),
 });
+
+export const activateCardSchema = Joi.object({
+  password: Joi.string().required(),
+  securityCode: Joi.string().required(),
+});
