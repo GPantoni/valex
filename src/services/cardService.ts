@@ -1,4 +1,5 @@
 import * as errorUtils from '../utils/errorUtils.js';
+import * as serviceUtils from '../utils/serviceUtils.js';
 import * as companyRepository from '../repositories/companyRepository.js';
 import * as employeeRepository from '../repositories/employeeRepository.js';
 import * as cardRepository from '../repositories/cardRepository.js';
@@ -87,7 +88,7 @@ export async function activateCard(cardInfo: any) {
     throw errorUtils.errorNotFound('card id');
   }
 
-  validateExpirationDate(existingCard.expirationDate);
+  serviceUtils.validateExpirationDate(existingCard.expirationDate);
 
   if (existingCard.password) {
     throw errorUtils.errorForbidden('Card has already been activated');
@@ -113,13 +114,6 @@ async function updateCardPassword(id: number, password: string) {
   return;
 }
 
-function validateExpirationDate(expirationDate: string) {
-  const now = dayjs(Date.now()).format('MM/YY');
-  if (dayjs(now).isAfter(dayjs(expirationDate))) {
-    throw errorUtils.errorBadRequest('Card has already expired');
-  }
-}
-
 function validateSecurityCode(
   securityCode: string,
   existingCard: cardRepository.Card
@@ -138,7 +132,7 @@ export async function blockCard(cardInfo: any) {
     throw errorUtils.errorNotFound('card id');
   }
 
-  validateExpirationDate(existingCard.expirationDate);
+  serviceUtils.validateExpirationDate(existingCard.expirationDate);
 
   if (existingCard.isBlocked) {
     throw errorUtils.errorForbidden('Card already blocked');
@@ -159,7 +153,7 @@ export async function unblockCard(cardInfo: any) {
     throw errorUtils.errorNotFound('card id');
   }
 
-  validateExpirationDate(existingCard.expirationDate);
+  serviceUtils.validateExpirationDate(existingCard.expirationDate);
 
   if (!existingCard.isBlocked) {
     throw errorUtils.errorForbidden('Card already unblocked');
