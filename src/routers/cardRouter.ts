@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validateSchema } from '../middlewares/validateSchema.js';
 import {
   activateCardSchema,
+  blockCardSchema,
   createCardSchema,
 } from '../schemas/cardSchemas.js';
 import * as cardController from '../controllers/cardController.js';
@@ -18,6 +19,12 @@ cardRouter.post(
   '/cards/:id/activate',
   validateSchema(activateCardSchema),
   cardController.activateCard
+);
+
+cardRouter.post(
+  '/cards/:id/block',
+  validateSchema(blockCardSchema),
+  cardController.blockCard
 );
 
 export default cardRouter;

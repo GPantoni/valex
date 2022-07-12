@@ -31,3 +31,15 @@ export async function activateCard(
 
   res.sendStatus(200);
 }
+
+export async function blockCard(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { id } = req.params;
+  const cardInfo = res.locals.verified;
+  cardInfo.id = id;
+
+  res.sendStatus(200);
+}
