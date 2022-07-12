@@ -1,8 +1,10 @@
 import * as errorUtils from '../utils/errorUtils.js';
-import * as serviceUtils from '../utils/serviceUtils.js';
+import * as cardUtils from '../utils/cardUtils.js';
 import * as companyRepository from '../repositories/companyRepository.js';
 import * as employeeRepository from '../repositories/employeeRepository.js';
 import * as cardRepository from '../repositories/cardRepository.js';
+import * as rechargeRepository from '../repositories/rechargeRepository.js';
+import * as paymentRepository from '../repositories/paymentRepository.js';
 import { faker } from '@faker-js/faker';
 import dayjs from 'dayjs';
 import Cryptr from 'cryptr';
@@ -88,7 +90,7 @@ export async function activateCard(cardInfo: any) {
     throw errorUtils.errorNotFound('card id');
   }
 
-  serviceUtils.validateExpirationDate(existingCard.expirationDate);
+  cardUtils.validateExpirationDate(existingCard.expirationDate);
 
   if (existingCard.password) {
     throw errorUtils.errorForbidden('Card has already been activated');
@@ -132,7 +134,7 @@ export async function blockCard(cardInfo: any) {
     throw errorUtils.errorNotFound('card id');
   }
 
-  serviceUtils.validateExpirationDate(existingCard.expirationDate);
+  cardUtils.validateExpirationDate(existingCard.expirationDate);
 
   if (existingCard.isBlocked) {
     throw errorUtils.errorForbidden('Card already blocked');
@@ -153,7 +155,7 @@ export async function unblockCard(cardInfo: any) {
     throw errorUtils.errorNotFound('card id');
   }
 
-  serviceUtils.validateExpirationDate(existingCard.expirationDate);
+  cardUtils.validateExpirationDate(existingCard.expirationDate);
 
   if (!existingCard.isBlocked) {
     throw errorUtils.errorForbidden('Card already unblocked');
@@ -164,4 +166,27 @@ export async function unblockCard(cardInfo: any) {
   if (isPasswordValid) {
     await cardRepository.update(id, { isBlocked: false });
   }
+}
+
+export async function getExtract(cardId: number) {
+  const card: cardRepository.Card = await cardRepository.findById(cardId);
+  if (!card) {
+    throw errorUtils.errorNotFound('Card');
+  }
+
+  const recharges: rechargeRepository.Recharge[] =
+    await rechargeRepository.findByCardId(cardId);
+  const totalRechargeAmount: number = recharges
+    .map((row) => row.amount)
+    .reduce((sum, current) => sum + current, 0);
+
+  const transactions: paymentRepository.Payment[] =
+    await paymentRepository.findByCardId(cardId);
+  const totalTransactionsAmount: number = transactions
+    .map((row) => row.amount)
+    .reduce((sum, current) => sum + current, 0);
+
+  const balance = totalRechargeAmount - totalTransactionsAmount;
+
+  return { balance, transactions, recharges };
 }
